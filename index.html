@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 반 칭찬 편지 💌</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas-Confetti (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts (Gaegu & Noto Sans KR) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FFFDF6',
+                        warmYellow: '#FFE893',
+                        softPink: '#FFD6E0',
+                        warmOrange: '#FF9E9E',
+                        pastelBlue: '#D8EFD3',
+                        pastelPurple: '#E8D5C4'
+                    },
+                    fontFamily: {
+                        gaegu: ['Gaegu', 'cursive'],
+                        sans: ['Noto Sans KR', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FFFDF6;
+            background-image: radial-gradient(#FFE893 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+        }
+
+        .font-hand {
+            font-family: 'Gaegu', cursive;
+        }
+
+        /* Shake 애니메이션 (입력 누락 시) */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 편지 접혀서 우편함으로 이동하는 3D 애니메이션 */
+        .letter-container {
+            perspective: 1000px;
+        }
+        
+        @keyframes foldAndFly {
+            0% {
+                transform: scale(1) rotate(0deg) translateY(0);
+                opacity: 1;
+            }
+            30% {
+                transform: scale(0.7) rotateX(60deg) rotateZ(-10deg) translateY(-20px);
+                opacity: 0.9;
+            }
+            70% {
+                transform: scale(0.4) rotateX(80deg) rotateZ(15deg) translateY(-150px);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(0.05) rotateX(90deg) rotateZ(0deg) translateY(-350px);
+                opacity: 0;
+            }
+        }
+
+        .animate-fold-fly {
+            animation: foldAndFly 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+        }
+
+        /* 우편함 살짝 흔들리는 효과 */
+        @keyframes mailboxBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15) rotate(5deg); }
+        }
+        .animate-mailbox-bounce {
+            animation: mailboxBounce 0.5s ease-in-out 0.8s;
+        }
+
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFFDF6;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFE893;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF9E9E;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 flex flex-col justify-between selection:bg-softPink selection:text-gray-900">
+
+    <!-- ===== [헤더 영역] ===== -->
+    <header class="w-full max-w-4xl mx-auto px-4 pt-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="resetToHome()">
+            <div class="bg-warmYellow p-2.5 rounded-2xl shadow-sm border-2 border-yellow-300">
+                <i data-lucide="mail-heart" class="w-8 h-8 text-rose-500"></i>
+            </div>
+            <div>
+                <h1 class="font-hand text-3xl font-bold tracking-wide text-gray-800">우리 반 칭찬 편지 💌</h1>
+                <p class="text-xs text-gray-500 font-medium">따뜻한 마음을 친구에게 전해보세요</p>
+            </div>
+        </div>
+
+        <!-- 교사 모드 진입 버튼 -->
+        <button onclick="openTeacherAuthModal()" class="flex items-center space-x-1.5 bg-white border-2 border-amber-200 hover:border-amber-400 text-amber-800 px-3.5 py-2 rounded-2xl shadow-sm transition-all hover:shadow-md min-h-[48px] text-sm font-semibold">
+            <i data-lucide="shield-check" class="w-5 h-5 text-amber-600"></i>
+            <span class="hidden sm:inline">선생님 모드</span>
+        </button>
+    </header>
+
+
+    <!-- ===== [메인 컨텐츠 영역] ===== -->
+    <main class="w-full max-w-2xl mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
+
+        <!-- ===== [1. 학생 모드: 칭찬 편지 쓰기 위저드] ===== -->
+        <div id="studentWizard" class="bg-white border-4 border-amber-100 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+            
+            <!-- 진행 단계 Indicator (Progress Dots) -->
+            <div id="wizardProgress" class="flex justify-center items-center space-x-3 mb-8">
+                <div id="dot-1" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-warmYellow text-amber-900 shadow-sm transition-all">1</div>
+                <div id="line-1" class="w-10 h-1 bg-gray-200 rounded-full transition-all"></div>
+                <div id="dot-2" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-200 text-gray-500 transition-all">2</div>
+                <div id="line-2" class="w-10 h-1 bg-gray-200 rounded-full transition-all"></div>
+                <div id="dot-3" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-200 text-gray-500 transition-all">3</div>
+            </div>
+
+            <!-- 에러 메시지 바 -->
+            <div id="errorMessage" class="hidden mb-4 p-3 bg-rose-100 border-2 border-rose-300 text-rose-700 rounded-xl text-sm font-medium flex items-center space-x-2 animate-shake">
+                <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+                <span id="errorText">입력 내용을 확인해 주세요!</span>
+            </div>
+
+            <!-- 편지 양식 컨테이너 (애니메이션 대상) -->
+            <div id="letterPaper" class="letter-container transition-all">
+                
+                <!-- STEP 1: 보내는 사람 -->
+                <div id="step-1" class="step-content">
+                    <div class="text-center mb-6">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full mb-2">STEP 1</span>
+                        <h2 class="text-2xl font-bold text-gray-800 font-hand sm:text-3xl">나의 이름은 무엇인가요? 😊</h2>
+                        <p class="text-xs text-gray-500 mt-1">편지를 보내는 사람의 이름을 적어주세요.</p>
+                    </div>
+                    <div class="space-y-4 max-w-md mx-auto">
+                        <input type="text" id="inputSender" placeholder="예: 김민준" 
+                            class="w-full text-center text-xl p-4 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all font-semibold"
+                            maxlength="10" onkeypress="handleKeyPress(event, 1)">
+                        <button onclick="goToStep(2)" class="w-full bg-warmYellow hover:bg-amber-300 text-amber-950 font-bold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 text-lg min-h-[52px]">
+                            <span>다음으로</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: 받는 사람 -->
+                <div id="step-2" class="step-content hidden">
+                    <div class="text-center mb-6">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full mb-2">STEP 2</span>
+                        <h2 class="text-2xl font-bold text-gray-800 font-hand sm:text-3xl">칭찬하고 싶은 친구는 누구인가요? 💖</h2>
+                        <p class="text-xs text-gray-500 mt-1">편지를 받을 친구의 이름을 적어주세요.</p>
+                    </div>
+                    <div class="space-y-4 max-w-md mx-auto">
+                        <input type="text" id="inputReceiver" placeholder="예: 이서연" 
+                            class="w-full text-center text-xl p-4 border-2 border-amber-200 rounded-2xl focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all font-semibold"
+                            maxlength="10" onkeypress="handleKeyPress(event, 2)">
+                        <div class="flex space-x-3">
+                            <button onclick="goToStep(1)" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-all text-base min-h-[52px]">
+                                이전
+                            </button>
+                            <button onclick="goToStep(3)" class="w-2/3 bg-warmYellow hover:bg-amber-300 text-amber-950 font-bold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 text-lg min-h-[52px]">
+                                <span>다음으로</span>
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: 칭찬 내용 입력 -->
+                <div id="step-3" class="step-content hidden">
+                    <div class="text-center mb-4">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full mb-2">STEP 3</span>
+                        <h2 class="text-2xl font-bold text-gray-800 font-hand sm:text-3xl">어떤 멋진 일을 칭찬하고 싶나요? ✨</h2>
+                        <p class="text-xs text-gray-500 mt-1">친구의 고마운 점이나 멋진 행동을 5자 이상 적어주세요.</p>
+                    </div>
+                    <div class="space-y-4 max-w-lg mx-auto">
+                        <div class="relative bg-amber-50/50 p-4 border-2 border-amber-200 rounded-2xl">
+                            <div class="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                                <span id="summarySenderReceiver" class="text-amber-800 font-bold"></span>
+                                <span>따뜻한 마음을 담아</span>
+                            </div>
+                            <textarea id="inputContent" rows="4" placeholder="예: 오늘 청소 시간에 청소구를 먼저 챙겨주고 도와줘서 너무 고마웠어! 너는 정말 친절한 친구야." 
+                                class="w-full bg-transparent resize-none text-base focus:outline-none text-gray-800 leading-relaxed font-hand text-xl"
+                                oninput="updateCharCount()"></textarea>
+                            <div class="text-right text-xs text-gray-400 font-sans" id="charCount">0 / 200자</div>
+                        </div>
+
+                        <div class="flex space-x-3">
+                            <button onclick="goToStep(2)" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-all text-base min-h-[52px]">
+                                이전
+                            </button>
+                            <button onclick="submitLetter()" class="w-2/3 bg-rose-400 hover:bg-rose-500 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-lg min-h-[52px]">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                                <span>편지 보내기!</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 우편함 애니메이션용 SVG 그래픽 (평소엔 숨김 또는 폼 아래에 배치) -->
+            <div id="mailboxIllustration" class="hidden flex-col items-center justify-center py-6">
+                <div id="mailboxIcon" class="transition-transform duration-300">
+                    <svg class="w-32 h-32 text-rose-500 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 4H5C3.89543 4 3 4.89543 3 6V18C3 19.1046 3.89543 20 5 20H19C20.1046 20 21 19.1046 21 18V6C21 4.89543 20.1046 4 19 4ZM19 8L12 13L5 8V6L12 11L19 6V8Z"/>
+                    </svg>
+                </div>
+                <p class="mt-4 text-amber-900 font-hand text-2xl font-bold animate-pulse">마음을 우편함에 쏙 넣는 중...</p>
+            </div>
+
+        </div>
+
+        <!-- ===== [완료 화면 (Success Screen)] ===== -->
+        <div id="successScreen" class="hidden bg-white border-4 border-amber-100 rounded-3xl p-8 shadow-xl text-center space-y-6">
+            <div class="w-24 h-24 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-inner border-2 border-rose-200">
+                <i data-lucide="heart-handshake" class="w-12 h-12"></i>
+            </div>
+            <div>
+                <h2 class="font-hand text-4xl font-bold text-gray-800 mb-2">편지 전달 완료! 🎉</h2>
+                <p class="text-gray-600 text-base leading-relaxed">
+                    칭찬 편지가 무사히 도착했어요.<br>
+                    선생님이 확인 후 친구에게 마음을 전달해 줄 거예요!
+                </p>
+            </div>
+            <div class="pt-4">
+                <button onclick="resetWizard()" class="w-full sm:w-auto px-8 py-4 bg-warmYellow hover:bg-amber-300 text-amber-950 font-bold rounded-2xl shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center space-x-2 text-lg min-h-[52px]">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    <span>더 칭찬하고 싶은 친구가 있나요?</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+
+    <!-- ===== [2. 교사 모드 대시보드 모달] ===== -->
+    <div id="teacherModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        
+        <!-- 교사 비밀번호 인증 화면 -->
+        <div id="teacherAuthCard" class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border-4 border-amber-200 relative animate-shake-target">
+            <button onclick="closeTeacherModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="lock" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800">선생님 인증</h3>
+                <p class="text-xs text-gray-500 mt-1">학급 관리용 비밀번호를 입력해 주세요.</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="teacherPassword" placeholder="비밀번호 입력" 
+                    class="w-full text-center text-xl p-3.5 border-2 border-gray-200 rounded-2xl focus:border-amber-400 focus:outline-none"
+                    onkeypress="if(event.key==='Enter') verifyPassword()">
+                <div id="authErrorMsg" class="hidden text-xs text-rose-500 text-center font-medium"></div>
+                <button onclick="verifyPassword()" id="btnAuthSubmit" class="w-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-3.5 rounded-2xl shadow transition-all min-h-[48px]">
+                    확인
+                </button>
+            </div>
+        </div>
+
+        <!-- 교사 대시보드 (인증 완료 시) -->
+        <div id="teacherDashboard" class="hidden bg-cream rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border-4 border-amber-300 overflow-hidden">
+            
+            <!-- 대시보드 헤더 -->
+            <div class="bg-white px-6 py-4 border-b border-amber-200 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-amber-100 p-2 rounded-xl text-amber-800">
+                        <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">학급 칭찬 대시보드</h2>
+                        <p class="text-xs text-gray-500">누적된 칭찬 편지를 통계 및 엑셀로 관리하세요</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- 전체 데이터 초기화 버튼 -->
+                    <button onclick="clearAllData()" class="flex items-center space-x-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all min-h-[44px] border border-rose-200">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-600"></i>
+                        <span>전체 데이터 초기화</span>
+                    </button>
+                    <button onclick="exportToCSV()" class="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow transition-all min-h-[44px]">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        <span>엑셀(CSV) 다운로드</span>
+                    </button>
+                    <button onclick="closeTeacherModal()" class="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 대시보드 메인 본문 (스크롤) -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+                
+                <!-- 1. 앙케이트 / TOP 3 랭킹 카드 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 가장 칭찬을 많이 받은 학생 TOP 3 -->
+                    <div class="bg-white p-5 rounded-2xl border-2 border-rose-100 shadow-sm">
+                        <div class="flex items-center space-x-2 mb-3 text-rose-600 font-bold border-b border-rose-100 pb-2">
+                            <i data-lucide="award" class="w-5 h-5"></i>
+                            <span>칭찬 듬뿍 받은 어린이 (TOP 3)</span>
+                        </div>
+                        <div id="topReceiversList" class="space-y-2">
+                            <!-- JS로 동적 생성 -->
+                        </div>
+                    </div>
+
+                    <!-- 가장 칭찬을 많이 한 학생 TOP 3 -->
+                    <div class="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
+                        <div class="flex items-center space-x-2 mb-3 text-amber-700 font-bold border-b border-amber-100 pb-2">
+                            <i data-lucide="heart" class="w-5 h-5"></i>
+                            <span>칭찬 요정 어린이 (TOP 3)</span>
+                        </div>
+                        <div id="topSendersList" class="space-y-2">
+                            <!-- JS로 동적 생성 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 필터 및 편지 목록 관리 -->
+                <div class="bg-white p-5 rounded-2xl border-2 border-gray-100 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="font-bold text-gray-800 text-lg">전체 편지 목록</h3>
+                            <span id="totalLetterBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">0건</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="teacherSearchInput" placeholder="이름 검색..." oninput="renderTeacherDashboard()" 
+                                class="p-2 px-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+                        </div>
+                    </div>
+
+                    <!-- 편지 데이터 테이블 / 카드리스트 -->
+                    <div id="teacherLetterContainer">
+                        <!-- JS로 동적 생성 -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ===== [푸터 영역] ===== -->
+    <footer class="w-full max-w-4xl mx-auto px-4 py-4 text-center text-xs text-gray-400">
+        <p>우리 반 칭찬 편지 웹 앱 &copy; 2026 초등 교육용 단일 실행 프로그램</p>
+    </footer>
+
+
+    <!-- ===== [자바스크립트 로직] ===== -->
+    <script>
+        /* =================================================================
+         * ⚙️ [교사 수정용 가이드 설정]
+         * 필요에 따라 아래의 비밀번호 및 설정을 직접 변경할 수 있습니다.
+         * ================================================================= */
+        const CONFIG = {
+            // 1. 교사 모드 비밀번호 (기본값: '020814')
+            TEACHER_PASSWORD: "020814",
+            
+            // 2. localStorage 데이터키 이름
+            STORAGE_KEY: "praise_letters_db",
+            
+            // 3. 비밀번호 실패 제한
+            MAX_AUTH_ATTEMPTS: 3,
+            LOCK_TIME_SEC: 10
+        };
+
+        // 데이터 상태 변수
+        let currentStep = 1;
+        let letterData = {
+            sender: "",
+            receiver: "",
+            content: ""
+        };
+
+        // 교사 로그인 관련 상태 변수
+        let authFailCount = 0;
+        let isLocked = false;
+
+        // Web Audio API Context (사운드 효과용)
+        let audioCtx = null;
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initAudio();
+        });
+
+        function initAudio() {
+            // 사용자 상호작용 후 Web Audio API 활성화를 위해 작성
+            window.addEventListener('click', () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }, { once: true });
+        }
+
+        /* -----------------------------------------------------------------
+         * 1. Web Audio API 기반 성공 효과음 (외부 소스 없이 자체 생성)
+         * ----------------------------------------------------------------- */
+        function playSuccessSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const now = audioCtx.currentTime;
+                
+                // 3음계 차임벨 (C5 -> E5 -> G5)
+                const notes = [523.25, 659.25, 783.99]; 
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+                    gain.gain.setValueAtTime(0, now + idx * 0.12);
+                    gain.gain.linearRampToValueAtTime(0.3, now + idx * 0.12 + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.4);
+                });
+            } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+            }
+        }
+
+        /* -----------------------------------------------------------------
+         * 2. 학생용 Wizard Form (단계별 이동 및 검증)
+         * ----------------------------------------------------------------- */
+        function handleKeyPress(e, step) {
+            if (e.key === 'Enter') {
+                if (step === 1) goToStep(2);
+                else if (step === 2) goToStep(3);
+            }
+        }
+
+        function hideError() {
+            const errDiv = document.getElementById('errorMessage');
+            errDiv.classList.add('hidden');
+        }
+
+        function showError(msg) {
+            const errDiv = document.getElementById('errorMessage');
+            const errText = document.getElementById('errorText');
+            errText.innerText = msg;
+            errDiv.classList.remove('hidden');
+
+            // 흔들림 애니메이션 재발동
+            errDiv.classList.remove('animate-shake');
+            void errDiv.offsetWidth; // reflow
+            errDiv.classList.add('animate-shake');
+        }
+
+        function updateCharCount() {
+            const text = document.getElementById('inputContent').value;
+            document.getElementById('charCount').innerText = `${text.length} / 200자`;
+        }
+
+        function goToStep(step) {
+            hideError();
+
+            // 유효성 검사
+            if (step === 2 && currentStep === 1) {
+                const sender = document.getElementById('inputSender').value.trim();
+                if (!sender) {
+                    showError("보내는 사람의 이름을 입력해 주세요!");
+                    document.getElementById('inputSender').focus();
+                    return;
+                }
+                letterData.sender = sender;
+            }
+
+            if (step === 3 && currentStep === 2) {
+                const receiver = document.getElementById('inputReceiver').value.trim();
+                if (!receiver) {
+                    showError("칭찬하고 싶은 친구의 이름을 입력해 주세요!");
+                    document.getElementById('inputReceiver').focus();
+                    return;
+                }
+                letterData.receiver = receiver;
+
+                // Step 3 요약 문구 업데이트
+                document.getElementById('summarySenderReceiver').innerText = 
+                    `${letterData.sender} 이(가) ${letterData.receiver} 에게`;
+            }
+
+            // 스텝 UI 전환
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+
+            // 진행 상태 표시 (Dots) 업데이트
+            currentStep = step;
+            updateProgressDots(step);
+
+            // 포커스 자동 이동
+            if (step === 1) document.getElementById('inputSender').focus();
+            if (step === 2) document.getElementById('inputReceiver').focus();
+            if (step === 3) document.getElementById('inputContent').focus();
+        }
+
+        function updateProgressDots(step) {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i <= step) {
+                    dot.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-warmYellow text-amber-900 shadow-sm transition-all";
+                } else {
+                    dot.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-200 text-gray-500 transition-all";
+                }
+            }
+
+            document.getElementById('line-1').className = step >= 2 ? "w-10 h-1 bg-warmYellow rounded-full transition-all" : "w-10 h-1 bg-gray-200 rounded-full transition-all";
+            document.getElementById('line-2').className = step >= 3 ? "w-10 h-1 bg-warmYellow rounded-full transition-all" : "w-10 h-1 bg-gray-200 rounded-full transition-all";
+        }
+
+        /* -----------------------------------------------------------------
+         * 3. 편지 제출 및 CSS 3D 우편함 애니메이션
+         * ----------------------------------------------------------------- */
+        function submitLetter() {
+            hideError();
+            const content = document.getElementById('inputContent').value.trim();
+
+            if (content.length < 5) {
+                showError("칭찬 내용을 최소 5자 이상 작성해 주세요!");
+                document.getElementById('inputContent').focus();
+                return;
+            }
+            letterData.content = content;
+
+            // 1) localStorage 저장
+            saveLetterToStorage({
+                id: Date.now().toString(),
+                sender: letterData.sender,
+                receiver: letterData.receiver,
+                content: letterData.content,
+                createdAt: new Date().toISOString()
+            });
+
+            // 2) CSS 3D 종이접기 & 우편함 이동 애니메이션 시작
+            const paper = document.getElementById('letterPaper');
+            const wizardProgress = document.getElementById('wizardProgress');
+            const mailbox = document.getElementById('mailboxIllustration');
+            const mailboxIcon = document.getElementById('mailboxIcon');
+
+            wizardProgress.classList.add('hidden');
+            paper.classList.add('animate-fold-fly');
+
+            setTimeout(() => {
+                mailbox.classList.remove('hidden');
+                mailbox.classList.add('flex');
+                mailboxIcon.classList.add('animate-mailbox-bounce');
+            }, 500);
+
+            // 3) 애니메이션 종료 후 성공 화면으로 이동
+            setTimeout(() => {
+                playSuccessSound();
+                
+                // 폭죽 애니메이션 발동 (Canvas-Confetti)
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#FFE893', '#FFD6E0', '#FF9E9E', '#D8EFD3']
+                    });
+                }
+
+                // UI 정리
+                document.getElementById('studentWizard').classList.add('hidden');
+                document.getElementById('successScreen').classList.remove('hidden');
+
+                // 클래스 리셋
+                paper.classList.remove('animate-fold-fly');
+                mailbox.classList.add('hidden');
+                mailbox.classList.remove('flex');
+                mailboxIcon.classList.remove('animate-mailbox-bounce');
+                wizardProgress.classList.remove('hidden');
+            }, 1800);
+        }
+
+        /* -----------------------------------------------------------------
+         * 4. LocalStorage 데이터 처리 로직
+         * ----------------------------------------------------------------- */
+        function getLettersFromStorage() {
+            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveLetterToStorage(newLetter) {
+            const letters = getLettersFromStorage();
+            letters.push(newLetter);
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(letters));
+        }
+
+        function deleteLetterFromStorage(id) {
+            if (!confirm("이 칭찬 편지를 삭제하시겠습니까?")) return;
+            let letters = getLettersFromStorage();
+            letters = letters.filter(item => item.id !== id);
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(letters));
+            renderTeacherDashboard();
+        }
+
+        /* -----------------------------------------------------------------
+         * 4-1. 전체 데이터 초기화 기능 (교사 전용)
+         * ----------------------------------------------------------------- */
+        function clearAllData() {
+            const letters = getLettersFromStorage();
+            if (letters.length === 0) {
+                alert("초기화할 칭찬 편지 데이터가 없습니다.");
+                return;
+            }
+
+            const input = prompt("⚠️ 정말로 모든 칭찬 편지 데이터를 초기화하시겠습니까?\n이 작업은 복구할 수 없습니다!\n\n삭제를 진행하시려면 아래에 '초기화' 라고 입력해 주세요.");
+            
+            if (input === '초기화') {
+                localStorage.removeItem(CONFIG.STORAGE_KEY);
+                alert("모든 칭찬 편지 데이터가 성공적으로 초기화되었습니다.");
+                renderTeacherDashboard();
+            } else if (input !== null) {
+                alert("입력값이 일치하지 않아 초기화가 취소되었습니다.");
+            }
+        }
+
+        function resetWizard() {
+            // 양식 초기화 후 Step 1 이동
+            document.getElementById('inputSender').value = "";
+            document.getElementById('inputReceiver').value = "";
+            document.getElementById('inputContent').value = "";
+            updateCharCount();
+
+            letterData = { sender: "", receiver: "", content: "" };
+
+            document.getElementById('successScreen').classList.add('hidden');
+            document.getElementById('studentWizard').classList.remove('hidden');
+            goToStep(1);
+        }
+
+        function resetToHome() {
+            resetWizard();
+        }
+
+        /* -----------------------------------------------------------------
+         * 5. 교사 모드 (인증 & 대시보드 통계)
+         * ----------------------------------------------------------------- */
+        function openTeacherAuthModal() {
+            document.getElementById('teacherModal').classList.remove('hidden');
+            document.getElementById('teacherAuthCard').classList.remove('hidden');
+            document.getElementById('teacherDashboard').classList.add('hidden');
+            document.getElementById('teacherPassword').value = "";
+            document.getElementById('authErrorMsg').classList.add('hidden');
+            document.getElementById('teacherPassword').focus();
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherModal').classList.add('hidden');
+        }
+
+        function verifyPassword() {
+            if (isLocked) return;
+
+            const inputPass = document.getElementById('teacherPassword').value;
+            const errorMsg = document.getElementById('authErrorMsg');
+
+            if (inputPass === CONFIG.TEACHER_PASSWORD) {
+                // 로그인 성공
+                authFailCount = 0;
+                errorMsg.classList.add('hidden');
+                document.getElementById('teacherAuthCard').classList.add('hidden');
+                document.getElementById('teacherDashboard').classList.remove('hidden');
+                renderTeacherDashboard();
+            } else {
+                // 로그인 실패
+                authFailCount++;
+                errorMsg.classList.remove('hidden');
+
+                if (authFailCount >= CONFIG.MAX_AUTH_ATTEMPTS) {
+                    isLocked = true;
+                    let remaining = CONFIG.LOCK_TIME_SEC;
+                    errorMsg.innerText = `비밀번호를 3회 틀렸습니다. ${remaining}초 후 다시 시도하세요.`;
+                    document.getElementById('btnAuthSubmit').disabled = true;
+
+                    const timer = setInterval(() => {
+                        remaining--;
+                        if (remaining > 0) {
+                            errorMsg.innerText = `비밀번호를 3회 틀렸습니다. ${remaining}초 후 다시 시도하세요.`;
+                        } else {
+                            clearInterval(timer);
+                            isLocked = false;
+                            authFailCount = 0;
+                            errorMsg.classList.add('hidden');
+                            document.getElementById('btnAuthSubmit').disabled = false;
+                        }
+                    }, 1000);
+                } else {
+                    errorMsg.innerText = `비밀번호가 올바르지 않습니다. (${authFailCount}/${CONFIG.MAX_AUTH_ATTEMPTS})`;
+                }
+
+                // Shake 효과
+                const authCard = document.getElementById('teacherAuthCard');
+                authCard.classList.remove('animate-shake');
+                void authCard.offsetWidth;
+                authCard.classList.add('animate-shake');
+            }
+        }
+
+        function renderTeacherDashboard() {
+            const letters = getLettersFromStorage();
+            const searchKeyword = document.getElementById('teacherSearchInput').value.trim().toLowerCase();
+
+            // 1. 전체 건수 표시
+            document.getElementById('totalLetterBadge').innerText = `${letters.length}건`;
+
+            // 2. TOP 3 랭킹 계산 (통계)
+            renderRankings(letters);
+
+            // 3. 편지 목록 필터링 및 렌더링
+            const filteredLetters = letters.filter(item => 
+                item.sender.toLowerCase().includes(searchKeyword) || 
+                item.receiver.toLowerCase().includes(searchKeyword) ||
+                item.content.toLowerCase().includes(searchKeyword)
+            ).reverse(); // 최신순
+
+            const container = document.getElementById('teacherLetterContainer');
+
+            if (filteredLetters.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-cream/50 rounded-2xl border-2 border-dashed border-gray-200">
+                        <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-2"></i>
+                        <p class="text-gray-500 font-medium">아직 등록된 칭찬 편지가 없거나 검색 결과가 없습니다.</p>
+                    </div>
+                `;
+            } else {
+                let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                filteredLetters.forEach(item => {
+                    const formattedDate = new Date(item.createdAt).toLocaleString('ko-KR', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+
+                    html += `
+                        <div class="bg-cream/40 border border-amber-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-all">
+                            <div>
+                                <div class="flex justify-between items-start mb-2 border-b border-amber-100 pb-2">
+                                    <div class="text-sm">
+                                        <span class="font-bold text-amber-900">${escapeHtml(item.sender)}</span> 
+                                        <span class="text-gray-400">➡️</span> 
+                                        <span class="font-bold text-rose-600">${escapeHtml(item.receiver)}</span>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 font-mono">${formattedDate}</span>
+                                </div>
+                                <p class="text-gray-700 text-sm font-hand text-lg leading-snug whitespace-pre-wrap">${escapeHtml(item.content)}</p>
+                            </div>
+                            <div class="mt-4 pt-2 flex justify-end">
+                                <button onclick="deleteLetterFromStorage('${item.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center space-x-1 hover:bg-rose-50 p-1.5 rounded-lg transition-all">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>삭제</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderRankings(letters) {
+            // 받는 사람 및 보내는 사람 카운트 집계
+            const receiverCounts = {};
+            const senderCounts = {};
+
+            letters.forEach(l => {
+                receiverCounts[l.receiver] = (receiverCounts[l.receiver] || 0) + 1;
+                senderCounts[l.sender] = (senderCounts[l.sender] || 0) + 1;
+            });
+
+            // 정렬 함수
+            const getTop3 = (obj) => Object.entries(obj)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3);
+
+            const topReceivers = getTop3(receiverCounts);
+            const topSenders = getTop3(senderCounts);
+
+            // 렌더링 - 칭찬 받은 TOP 3
+            const receiverContainer = document.getElementById('topReceiversList');
+            if (topReceivers.length === 0) {
+                receiverContainer.innerHTML = `<p class="text-xs text-gray-400">데이터가 없습니다.</p>`;
+            } else {
+                const medals = ['🥇', '🥈', '🥉'];
+                receiverContainer.innerHTML = topReceivers.map(([name, count], idx) => `
+                    <div class="flex justify-between items-center text-sm bg-rose-50/60 p-2 px-3 rounded-xl">
+                        <span class="font-bold text-gray-800">${medals[idx]} ${escapeHtml(name)}</span>
+                        <span class="bg-rose-200 text-rose-800 text-xs font-bold px-2 py-0.5 rounded-full">${count}회</span>
+                    </div>
+                `).join('');
+            }
+
+            // 렌더링 - 칭찬 한 TOP 3
+            const senderContainer = document.getElementById('topSendersList');
+            if (topSenders.length === 0) {
+                senderContainer.innerHTML = `<p class="text-xs text-gray-400">데이터가 없습니다.</p>`;
+            } else {
+                const medals = ['👑', '⭐', '✨'];
+                senderContainer.innerHTML = topSenders.map(([name, count], idx) => `
+                    <div class="flex justify-between items-center text-sm bg-amber-50/60 p-2 px-3 rounded-xl">
+                        <span class="font-bold text-gray-800">${medals[idx]} ${escapeHtml(name)}</span>
+                        <span class="bg-amber-200 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">${count}회</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        /* -----------------------------------------------------------------
+         * 6. 데이터 엑셀(CSV) 다운로드 (UTF-8 BOM 포함으로 한글 깨짐 방지)
+         * ----------------------------------------------------------------- */
+        function exportToCSV() {
+            const letters = getLettersFromStorage();
+            if (letters.length === 0) {
+                alert("다운로드할 칭찬 편지 데이터가 없습니다!");
+                return;
+            }
+
+            // CSV 헤더 정의
+            let csvContent = "보낸사람,받는사람,칭찬내용,작성시간\n";
+
+            // Row 생성
+            letters.forEach(item => {
+                const sender = `"${item.sender.replace(/"/g, '""')}"`;
+                const receiver = `"${item.receiver.replace(/"/g, '""')}"`;
+                const content = `"${item.content.replace(/"/g, '""')}"`;
+                const date = `"${new Date(item.createdAt).toLocaleString('ko-KR')}"`;
+
+                csvContent += `${sender},${receiver},${content},${date}\n`;
+            });
+
+            // UTF-8 BOM 헤더 추가 (엑셀 한글 깨짐 문제 해결 핵심)
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+            
+            // 파일 다운로드 링크 생성
+            const today = new Date().toISOString().slice(0, 10);
+            const fileName = `우리반_칭찬편지_모음_${today}.csv`;
+
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        /* XSS 방지용 문자열 이스케이프 함수 */
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
