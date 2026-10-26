@@ -405,75 +405,77 @@
         /* -----------------------------------------------------------------
          * 3. 구글 시트로 편지 전송 및 애니메이션
          * ----------------------------------------------------------------- */
-        function submitLetter() {
-            hideError();
-            const content = document.getElementById('inputContent').value.trim();
+       function submitLetter() {
+    hideError();
+    const content = document.getElementById('inputContent').value.trim();
 
-            if (content.length < 5) {
-                showError("칭찬 내용을 최소 5자 이상 작성해 주세요!");
-                document.getElementById('inputContent').focus();
-                return;
-            }
-            letterData.content = content;
+    if (content.length < 5) {
+        showError("칭찬 내용을 최소 5자 이상 작성해 주세요!");
+        document.getElementById('inputContent').focus();
+        return;
+    }
+    letterData.content = content;
 
-            const payload = {
-                sender: letterData.sender,
-                receiver: letterData.receiver,
-                content: letterData.content,
-                createdAt: new Date().toLocaleString('ko-KR')
-            };
+    const payload = {
+        sender: letterData.sender,
+        receiver: letterData.receiver,
+        content: letterData.content,
+        createdAt: new Date().toLocaleString('ko-KR')
+    };
 
-            // 버튼 중복 클릭 방지
-            document.getElementById('btnSubmit').disabled = true;
+    document.getElementById('btnSubmit').disabled = true;
 
-            // 구글 시트로 데이터 전송 (fetch)
-            if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbwRmaI_9FkO3s-O4f3jAFF5fdpLpT6-KBxkIUfoZ0NZbfgWxyXcvvM1l83TxMQqpIxr/exec")) {
-                fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).catch(err => console.error("전송 오류:", err));
-            }
+    // 💡 구글 시트로 안정적으로 전송하는 핵심 부분
+    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbzovemyiFtv5tocqRsBNROQoaRuBc4OdU9Hzs-LaG6rGmYYGOkEhYG-KcjM-QALJn_f/exec")) {
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        }).then(response => {
+            console.log("전송 성공!");
+        }).catch(err => {
+            console.error("전송 오류:", err);
+        });
+    }
 
-            // 애니메이션 진행
-            const paper = document.getElementById('letterPaper');
-            const wizardProgress = document.getElementById('wizardProgress');
-            const mailbox = document.getElementById('mailboxIllustration');
-            const mailboxIcon = document.getElementById('mailboxIcon');
+    // 애니메이션 실행
+    const paper = document.getElementById('letterPaper');
+    const wizardProgress = document.getElementById('wizardProgress');
+    const mailbox = document.getElementById('mailboxIllustration');
+    const mailboxIcon = document.getElementById('mailboxIcon');
 
-            wizardProgress.classList.add('hidden');
-            paper.classList.add('animate-fold-fly');
+    wizardProgress.classList.add('hidden');
+    paper.classList.add('animate-fold-fly');
 
-            setTimeout(() => {
-                mailbox.classList.remove('hidden');
-                mailbox.classList.add('flex');
-                mailboxIcon.classList.add('animate-mailbox-bounce');
-            }, 500);
+    setTimeout(() => {
+        mailbox.classList.remove('hidden');
+        mailbox.classList.add('flex');
+        mailboxIcon.classList.add('animate-mailbox-bounce');
+    }, 500);
 
-            setTimeout(() => {
-                playSuccessSound();
-                
-                if (typeof confetti === 'function') {
-                    confetti({
-                        particleCount: 80,
-                        spread: 70,
-                        origin: { y: 0.6 },
-                        colors: ['#FFE893', '#FFD6E0', '#FF9E9E', '#D8EFD3']
-                    });
-                }
-
-                document.getElementById('studentWizard').classList.add('hidden');
-                document.getElementById('successScreen').classList.remove('hidden');
-
-                paper.classList.remove('animate-fold-fly');
-                mailbox.classList.add('hidden');
-                mailbox.classList.remove('flex');
-                mailboxIcon.classList.remove('animate-mailbox-bounce');
-                wizardProgress.classList.remove('hidden');
-                document.getElementById('btnSubmit').disabled = false;
-            }, 1800);
+    setTimeout(() => {
+        playSuccessSound();
+        
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFE893', '#FFD6E0', '#FF9E9E', '#D8EFD3']
+            });
         }
+
+        document.getElementById('studentWizard').classList.add('hidden');
+        document.getElementById('successScreen').classList.remove('hidden');
+
+        paper.classList.remove('animate-fold-fly');
+        mailbox.classList.add('hidden');
+        mailbox.classList.remove('flex');
+        mailboxIcon.classList.remove('animate-mailbox-bounce');
+        wizardProgress.classList.remove('hidden');
+        document.getElementById('btnSubmit').disabled = false;
+    }, 1800);
+}
 
         function resetWizard() {
             document.getElementById('inputSender').value = "";
